@@ -3,6 +3,16 @@ import sys
 import requests
 import json
 from amadeus import Client, ResponseError
+import argparse
+import datetime
+
+# Parse Args
+parser = argparse.ArgumentParser(prog="Traveller", description="Flight Planner Application")
+parser.add_argument("dest", action="store", help="The Destination Airport")
+parser.add_argument("dest_date", action="store", help="Date of Arrival at Destination",
+                    type=datetime.date.fromisoformat)
+
+args = parser.parse_args()
 
 # Amadeus Login
 API_KEY = open("key.env").read().strip()
@@ -33,8 +43,8 @@ try:
     for code in iata[:2]:
         flights = amadeus.shopping.flight_offers.get(
             origin=code,
-            destination="LGA",
-            departureDate="2019-08-01"
+            destination=args.dest,
+            departureDate=args.dest_date
         )
         print(flights.data)
 except ResponseError as e:
