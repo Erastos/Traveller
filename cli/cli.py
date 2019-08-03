@@ -31,43 +31,79 @@ API_SECRET = open("secret.env").read().strip()
 print(API_SECRET)
 
 # Get Lat and Long
-unformated_body = requests.get("http://ip-api.com/json").content.decode("utf-8")
-body = json.loads(unformated_body)
-lat = body["lat"]
-long = body["lon"]
+# unformated_body = requests.get("http://ip-api.com/json").content.decode("utf-8")
+# body = json.loads(unformated_body)
+# lat = body["lat"]
+# long = body["lon"]
 
-try:
-    # Get IATA Codes from Airport
-    amadeus = Client(
-        client_id=API_KEY,
-        client_secret=API_SECRET
-    )
-    # Get Closest Airports
-    response = amadeus.reference_data.locations.airports.get(
-        latitude=lat,
-        longitude=long
-    )
-    iata = [element["iataCode"] for element in response.data]
+json_file = open("test.json")
+flights = []
+for line in json_file:
+    flights.append(json.loads(line.strip()))
 
-    # Get Flights from those airports
-    t_n = 1
-    for code in iata[:1]:
-        flights = amadeus.shopping.flight_offers.get(
-            origin=code,
-            destination=args.dest,
-            departureDate=args.dest_date,
-            max=3
-        )
-        body = json.loads(flights.body)
-        for trip in flights.data:
-            output = "{0}:".format(t_n)
-            for flight in trip["offerItems"][0]["services"][0]["segments"]:
-                iata_code = flight["flightSegment"]["departure"]["iataCode"]
-                output += " {0} ({1}) --->".format(iata_code, body["dictionaries"]["locations"][iata_code]["detailedName"])
-            arrival = flight["flightSegment"]["arrival"]["iataCode"]
-            output += " {0} ({1})".format(arrival, body["dictionaries"]["locations"][arrival]["detailedName"])
-            print(output)
-            t_n += 1
-except ResponseError as e:
-    print(e)
-    sys.exit(1)
+
+class Flight:
+    def __init__(self, dest, arrive, dTime, aTime):
+        self.dest = dest
+        self.arrive = arrive
+        self.dTime = dTime
+        self.aTime = aTime
+
+
+class Trip:
+    def __init__(self, flights):
+        self.flights = flights
+
+    def __str__(self):
+        return self.trip_path()
+
+    def trip_path(self):
+        for flight in self.flights:
+
+
+trips = []
+for airport in flights:
+    for _trip in airport["data"]:
+        flights = []
+        for flight in _trip["offerItems"][0]["services"][0]["segments"]:
+            flights.append(Flight(flight["flightSegment"]["departure"]["iataCode"],
+                                  flight["flightSegment"]["arrival"]["iataCode"], 0, 0))
+        trip = Trip(flights)
+        trips.append(trip)
+# try:
+# # Get IATA Codes from Airport
+# amadeus = Client(
+#     client_id=API_KEY,
+#     client_secret=API_SECRET
+# )
+# # Get Closest Airports
+# response = amadeus.reference_data.locations.airports.get(
+#     latitude=lat,
+#     longitude=long
+# )
+# iata = [element["iataCode"] for element in response.data]
+#
+# # Get Flights from those airports
+# for code in iata[:3]:
+#     flights = amadeus.shopping.flight_offers.get(
+#         origin=code,
+#         destination=args.dest,
+#         departureDate=args.dest_date
+#     )
+#     body = json.loads(flights.body)
+# t_n = 1
+for airport in flights:
+    for trip in airport["data"]:
+        output = "{0}:".format(t_n)
+        for flight in trip["offerItems"][0]["services"][0]["segments"]:
+            iata_code = flight["flightSegment"]["departure"]["iataCode"]
+            output += " {0} ({1}) --->".format(iata_code, airport["dictionaries"]["locations"][iata_code]
+            ["detailedName"])
+        arrival = flight["flightSegment"]["arrival"]["iataCode"]
+        output += " {0} ({1})".format(arrival, airport["dictionaries"]["locations"][arrival]["detailedName"])
+        print(output)
+        t_n += 1
+
+# except ResponseError as e:
+#     print(e)
+#     sys.exit(1)
